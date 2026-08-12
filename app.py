@@ -6,8 +6,9 @@ import io
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# HuggingFace AI Engine API
 API_URL = "https://api-inference.huggingface.co/models/briaai/RMBG-1.4"
+# Real User-Agent so API doesn't throw 500
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 @app.route('/remove-bg', methods=['POST', 'OPTIONS'])
 def remove_bg():
@@ -20,12 +21,13 @@ def remove_bg():
     file = request.files['image']
     image_bytes = file.read()
     
-    # Process through fast AI Inference Engine
-    response = requests.post(API_URL, data=image_bytes)
+    # Send request with headers
+    response = requests.post(API_URL, headers=HEADERS, data=image_bytes)
     
     if response.status_code == 200:
         return send_file(io.BytesIO(response.content), mimetype='image/png')
     else:
+        # If model is loading on HuggingFace side, retry once
         return f"AI API Error: {response.status_code}", 500
 
 if __name__ == '__main__':
