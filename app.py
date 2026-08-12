@@ -5,15 +5,21 @@ from PIL import Image
 import io
 
 app = Flask(__name__)
-CORS(app) # Allow GitHub Pages frontend to connect
+# Allow CORS for all origins and headers completely
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route('/remove-bg', methods=['POST'])
+@app.route('/remove-bg', methods=['POST', 'OPTIONS'])
 def remove_bg():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     if 'image' not in request.files:
         return 'No image uploaded', 400
     
     file = request.files['image']
     input_image = Image.open(file.stream)
+    
+    # Process Image
     output_image = remove(input_image)
     
     img_io = io.BytesIO()
@@ -23,5 +29,4 @@ def remove_bg():
     return send_file(img_io, mimetype='image/png')
 
 if __name__ == '__main__':
-    # Render uses gunicorn, so this is mainly for local testing
     app.run(host='0.0.0.0', port=5000)
